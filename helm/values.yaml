@@ -17,8 +17,8 @@ env:
   # - `infinity` (https://github.com/infiniflow/infinity)
   # - `opensearch` (https://github.com/opensearch-project/OpenSearch)
   # DOC_ENGINE: elasticsearch
-  DOC_ENGINE: infinity
-  # DOC_ENGINE: opensearch
+  # DOC_ENGINE: infinity
+  DOC_ENGINE: opensearch
 
   # The version of Elasticsearch.
   STACK_VERSION: "8.11.3"
@@ -178,8 +178,8 @@ opensearch:
     strategy:
     resources:
       requests:
-        cpu: "4"
-        memory: "16Gi"
+        cpu: "0.1"
+        # memory: "16Gi"
   service:
     type: ClusterIP
 
