@@ -28,16 +28,38 @@ spec:
     - host: {{ .host | quote }}
       http:
         paths:
-          {{- range .paths }}
-          - path: {{ .path }}
-            {{- with .pathType }}
-            pathType: {{ . }}
-            {{- end }}
+          - path: /api/v1/admin
+            pathType: Prefix
+            backend:
+              service:
+                {{- if and $.Values.ragflow.api.service.enabled $.Values.ragflow.admin.enabled }}
+                name: {{ $.Release.Name }}-admin
+                port:
+                  number: {{ $.Values.ragflow.admin.port }}
+                {{- else }}
+                name: {{ include "ragflow.fullname" $ }}
+                port:
+                  name: http
+                {{- end }}
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                {{- if $.Values.ragflow.api.service.enabled }}
+                name: {{ $.Release.Name }}-api
+                port:
+                  number: 80
+                {{- else }}
+                name: {{ include "ragflow.fullname" $ }}
+                port:
+                  name: http
+                {{- end }}
+          - path: /
+            pathType: Prefix
             backend:
               service:
                 name: {{ include "ragflow.fullname" $ }}
                 port:
                   name: http
-          {{- end }}
     {{- end }}
 {{- end }}
