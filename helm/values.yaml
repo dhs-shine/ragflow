@@ -112,10 +112,19 @@ ragflow:
   admin:
     # Enable Admin Service
     enabled: true
+    # Number of replicas for the dedicated admin Deployment
+    replicaCount: 1
     # Admin Service port configuration
     port: 9381
     # Admin Service type
     serviceType: ClusterIP
+    # Optional scheduling policies for leader-like admin workloads
+    nodeSelector: {}
+    affinity: {}
+    tolerations: []
+    pdb:
+      enabled: true
+      maxUnavailable: 0
   api:
     service:
       enabled: true
