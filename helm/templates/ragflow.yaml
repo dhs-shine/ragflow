@@ -7,7 +7,7 @@ metadata:
     {{- include "ragflow.labels" . | nindent 4 }}
     app.kubernetes.io/component: ragflow
 spec:
-  replicas: 1
+  replicas: {{ .Values.ragflow.replicaCount }}
   selector:
     matchLabels:
       {{- include "ragflow.selectorLabels" . | nindent 6 }}
