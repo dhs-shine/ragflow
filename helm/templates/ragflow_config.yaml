@@ -32,12 +32,24 @@ data:
         gzip_disable "MSIE [1-6]\.";
 
         location ~ ^/api/v1/admin {
+            {{- if eq (default "monolith" .Values.ragflow.mode) "split" }}
+            {{- if and .Values.ragflow.admin.enabled .Values.ragflow.workloads.admin.enabled }}
+            proxy_pass http://{{ .Release.Name }}-admin.{{ .Release.Namespace }}.svc:{{ .Values.ragflow.admin.port }};
+            {{- else }}
+            return 404;
+            {{- end }}
+            {{- else }}
             proxy_pass http://localhost:9381;
+            {{- end }}
             include proxy.conf;
         }
 
         location ~ ^/(v1|api) {
+            {{- if eq (default "monolith" .Values.ragflow.mode) "split" }}
+            proxy_pass http://{{ .Release.Name }}-api.{{ .Release.Namespace }}.svc:80;
+            {{- else }}
             proxy_pass http://localhost:9380;
+            {{- end }}
             include proxy.conf;
         }
 
