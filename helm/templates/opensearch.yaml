@@ -1,4 +1,4 @@
-{{- if eq .Values.env.DOC_ENGINE "opensearch" -}}
+{{- if and (eq .Values.env.DOC_ENGINE "opensearch") .Values.opensearch.enabled -}}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -83,7 +83,7 @@ spec:
         {{- end }}
         envFrom:
           - secretRef:
-              name: {{ include "ragflow.fullname" . }}-env-config
+              name: {{ default (printf "%s-env-config" (include "ragflow.fullname" .)) .Values.env.existingSecret }}
           - configMapRef:
               name: {{ include "ragflow.fullname" . }}-opensearch-config
         ports:

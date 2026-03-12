@@ -35,18 +35,18 @@ helm uninstall ragflow -n ragflow
 The chart can deploy in-cluster services or connect to external ones. Toggle with `*.enabled`. When disabled, provide host/port via `env.*`.
 
 - MySQL
-  - `mysql.enabled`: default `true`
+  - `mysql.enabled`: default `false` (recommended: managed external DB)
   - If `false`, set:
     - `env.MYSQL_HOST` (required), `env.MYSQL_PORT` (default `3306`)
     - `env.MYSQL_DBNAME` (default `rag_flow`), `env.MYSQL_PASSWORD` (required)
     - `env.MYSQL_USER` (default `root` if omitted)
 - MinIO
-  - `minio.enabled`: default `true`
+  - `minio.enabled`: default `false` (recommended: managed object storage)
   - Configure:
     - `env.MINIO_HOST` (optional external host), `env.MINIO_PORT` (default `9000`)
     - `env.MINIO_ROOT_USER` (default `rag_flow`), `env.MINIO_PASSWORD` (optional)
 - Redis (Valkey)
-  - `redis.enabled`: default `true`
+  - `redis.enabled`: default `false` (recommended: managed cache)
   - If `false`, set:
     - `env.REDIS_HOST` (required), `env.REDIS_PORT` (default `6379`)
     - `env.REDIS_PASSWORD` (optional; empty disables auth if server allows)
@@ -93,7 +93,7 @@ helm upgrade --install ragflow ./helm -n ragflow -f values.override.yaml
 
 ## Document Engine Selection
 
-Choose one of `infinity` (default), `elasticsearch`, or `opensearch` via `env.DOC_ENGINE`. The chart renders only the selected engine and sets the appropriate host variables.
+Choose one of `infinity` (default), `elasticsearch`, or `opensearch` via `env.DOC_ENGINE`. Set `<engine>.enabled=false` to use a managed external search service and provide the corresponding host in `env` (`INFINITY_HOST` / `ES_HOST` / `OS_HOST`).
 
 ```yaml
 env:
@@ -128,6 +128,15 @@ helm template ragflow ./helm > rendered.yaml
 
 ## Notes
 
-- By default, the chart uses `DOC_ENGINE: infinity` and deploys in-cluster MySQL, MinIO, and Redis.
+- By default, the chart uses `DOC_ENGINE: infinity` with in-cluster Infinity enabled, while MySQL/MinIO/Redis are set to external-first (`*.enabled=false`).
 - The chart injects derived `*_HOST`/`*_PORT` and required secrets into a single Secret (`<release>-ragflow-env-config`).
 - `global.repo` and `global.imagePullSecrets` apply to all Pods; per-component `*.image.pullSecrets` still work and are merged with global settings.
+
+
+## Production Availability & Observability
+
+- RAGFlow Deployment now includes `startupProbe`, `readinessProbe`, and `livenessProbe`.
+- PodDisruptionBudget is enabled for the main RAGFlow Deployment to reduce downtime during node drains/upgrades.
+- Default rollout strategy is tuned to `RollingUpdate` (`maxUnavailable: 0`, `maxSurge: 1`) for zero-downtime style updates.
+- You can manage runtime secrets with an externally managed secret by setting `env.existingSecret` (for example, target secret created by ExternalSecret).
+- Pod annotations are configurable via `ragflow.deployment.podAnnotations` for Prometheus/OpenTelemetry integrations.

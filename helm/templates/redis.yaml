@@ -63,7 +63,7 @@ spec:
             - "exec redis-server --requirepass ${REDIS_PASSWORD} --maxmemory 128mb --maxmemory-policy allkeys-lru"
           envFrom:
             - secretRef:
-                name: {{ include "ragflow.fullname" . }}-env-config
+                name: {{ default (printf "%s-env-config" (include "ragflow.fullname" .)) .Values.env.existingSecret }}
           ports:
             - containerPort: 6379
               name: redis
