@@ -75,6 +75,30 @@ env:
   EMBEDDING_BATCH_SIZE: 16
 
 ragflow:
+  # Runtime workload profile for the ragflow container.
+  # Available presets: web | api | admin | worker
+  workload: web
+
+  # Workload specific startup args.
+  # Operators can override these presets to match their own role split.
+  workloads:
+    web:
+      args: []
+    api:
+      args:
+        - --disable-taskexecutor
+        - --disable-datasync
+    admin:
+      args:
+        - --disable-webserver
+        - --disable-taskexecutor
+        - --disable-datasync
+        - --enable-adminserver
+    worker:
+      args:
+        - --disable-webserver
+        - --disable-datasync
+
   image:
     repository: infiniflow/ragflow
     tag: v0.25.0

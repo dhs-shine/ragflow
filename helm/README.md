@@ -104,6 +104,41 @@ env:
   OPENSEARCH_PASSWORD: "<os-pass>"
 ```
 
+## RAGFlow Workload Profiles and Startup Flags
+
+You can configure runtime behavior through `ragflow.workload` and per-workload `args` values.
+
+```yaml
+ragflow:
+  workload: api
+  workloads:
+    api:
+      args:
+        - --disable-taskexecutor
+        - --disable-datasync
+```
+
+### Flag meanings
+
+- `--disable-webserver`: Disable the web/admin HTTP serving process.
+- `--enable-adminserver`: Enable admin server endpoint (port `9381`).
+- `--disable-taskexecutor`: Disable async task execution workers.
+- `--disable-datasync`: Disable data synchronization routines.
+
+### Recommended combinations
+
+| Workload | Recommended args | Purpose |
+| --- | --- | --- |
+| `web` | _none_ (default) | Web UI and standard API/service routing |
+| `api` | `--disable-taskexecutor --disable-datasync` | API-focused node without admin/task/data background roles |
+| `admin` | `--disable-webserver --disable-taskexecutor --disable-datasync --enable-adminserver` | Dedicated admin endpoint node |
+| `worker` | `--disable-webserver --disable-datasync` | Background execution focused node |
+
+Notes:
+- `ragflow.workload` must be one of: `web`, `api`, `admin`, `worker`.
+- You can override any preset in `ragflow.workloads.<name>.args` to customize role composition.
+- Admin Service (`<release>-admin`) is rendered only when both `ragflow.admin.enabled=true` and selected args include `--enable-adminserver`.
+
 ## Ingress
 
 Expose the web UI via Ingress:
