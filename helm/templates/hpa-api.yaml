@@ -1,0 +1,26 @@
+{{- if .Values.ragflow.api.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Release.Name }}-api
+  labels:
+    {{- include "ragflow.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ragflow-api
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ default (printf "%s-api" .Release.Name) .Values.ragflow.api.deploymentName }}
+  minReplicas: {{ .Values.ragflow.api.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.ragflow.api.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.ragflow.api.autoscaling.targetCPUUtilizationPercentage }}
+    {{- with .Values.ragflow.api.autoscaling.customMetrics }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+{{- end }}

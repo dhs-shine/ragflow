@@ -75,6 +75,8 @@ env:
   EMBEDDING_BATCH_SIZE: 16
 
 ragflow:
+  # This deployment powers the web UI container in this chart.
+  replicaCount: 1
   image:
     repository: infiniflow/ragflow
     tag: v0.25.0
@@ -112,14 +114,56 @@ ragflow:
   admin:
     # Enable Admin Service
     enabled: true
+    # Keep admin as a single fixed replica by default.
+    replicaCount: 1
+    autoscaling:
+      enabled: false
     # Admin Service port configuration
     port: 9381
     # Admin Service type
     serviceType: ClusterIP
   api:
+    # Deployment name that HPA targets. Useful when API workload
+    # is managed by another chart/release.
+    deploymentName: ""
+    autoscaling:
+      enabled: false
+      minReplicas: 1
+      maxReplicas: 3
+      targetCPUUtilizationPercentage: 70
+      # Extend with custom metrics supported by autoscaling/v2.
+      # Example:
+      # customMetrics:
+      #   - type: Pods
+      #     pods:
+      #       metric:
+      #         name: http_requests_per_second
+      #       target:
+      #         type: AverageValue
+      #         averageValue: "30"
+      customMetrics: []
     service:
       enabled: true
       type: ClusterIP
+  worker:
+    # Deployment name that HPA targets. Useful when worker workload
+    # is managed by another chart/release.
+    deploymentName: ""
+    autoscaling:
+      enabled: false
+      minReplicas: 1
+      maxReplicas: 5
+      targetCPUUtilizationPercentage: 75
+      # Example queue depth metric:
+      # customMetrics:
+      #   - type: External
+      #     external:
+      #       metric:
+      #         name: ragflow_queue_depth
+      #       target:
+      #         type: Value
+      #         value: "100"
+      customMetrics: []
 
 infinity:
   image:
