@@ -1,4 +1,4 @@
-{{- if eq .Values.env.DOC_ENGINE "infinity" -}}
+{{- if and (eq .Values.env.DOC_ENGINE "infinity") .Values.infinity.enabled -}}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -60,7 +60,7 @@ spec:
         {{- end }}
         envFrom:
           - secretRef:
-              name: {{ include "ragflow.fullname" . }}-env-config
+              name: {{ default (printf "%s-env-config" (include "ragflow.fullname" .)) .Values.env.existingSecret }}
         ports:
           - containerPort: 23817
             name: thrift

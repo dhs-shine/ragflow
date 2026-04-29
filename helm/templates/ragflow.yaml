@@ -25,6 +25,12 @@ spec:
         checksum/values: {{ .Values | toYaml | sha256sum }}
         checksum/config-env: {{ include (print $.Template.BasePath "/env.yaml") . | sha256sum }}
         checksum/config-ragflow: {{ include (print $.Template.BasePath "/ragflow_config.yaml") . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9380"
+        prometheus.io/path: "/metrics"
+        {{- with .Values.ragflow.deployment.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       {{- if or .Values.global.imagePullSecrets .Values.ragflow.image.pullSecrets }}
       imagePullSecrets:
@@ -76,7 +82,29 @@ spec:
           {{- end }}
         envFrom:
           - secretRef:
-              name: {{ include "ragflow.fullname" . }}-env-config
+              name: {{ default (printf "%s-env-config" (include "ragflow.fullname" .)) .Values.env.existingSecret }}
+        startupProbe:
+          httpGet:
+            path: /v1/system/health
+            port: http-api
+          failureThreshold: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /v1/system/health
+            port: http-api
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+        livenessProbe:
+          httpGet:
+            path: /v1/system/health
+            port: http-api
+          initialDelaySeconds: 30
+          periodSeconds: 20
+          timeoutSeconds: 5
+          failureThreshold: 3
         {{- with .Values.ragflow.deployment.resources }}
         resources:
           {{- . | toYaml | nindent 10 }}
@@ -147,3 +175,18 @@ spec:
       name: admin
   type: {{ .Values.ragflow.admin.serviceType }}
 {{- end }}
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "ragflow.fullname" . }}-pdb
+  labels:
+    {{- include "ragflow.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ragflow
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      {{- include "ragflow.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: ragflow

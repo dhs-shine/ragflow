@@ -11,6 +11,10 @@ global:
   imagePullSecrets: []
 
 env:
+  # Use an existing Secret (or ExternalSecret-managed target secret) for all runtime env vars.
+  # When set, chart will not create <release>-env-config Secret.
+  existingSecret: ""
+
   # The type of doc engine to use.
   # Available options:
   # - `elasticsearch` (default)
@@ -49,6 +53,16 @@ env:
   # MINIO_HOST: ""
   # External MinIO port (defaults to 9000 if not set)
   # MINIO_PORT: "9000"
+
+  # External Infinity host (required when DOC_ENGINE=infinity and infinity.enabled=false)
+  # INFINITY_HOST: ""
+
+  # External Elasticsearch host (required when DOC_ENGINE=elasticsearch and elasticsearch.enabled=false)
+  # ES_HOST: ""
+
+  # External OpenSearch host/port (required when DOC_ENGINE=opensearch and opensearch.enabled=false)
+  # OS_HOST: ""
+  # OS_PORT: "9201"
 
   # The password for Redis
   REDIS_PASSWORD: infini_rag_flow_helm
@@ -105,6 +119,15 @@ ragflow:
   # Kubernetes configuration
   deployment:
     strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 0
+        maxSurge: 1
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9380"
+      prometheus.io/path: "/metrics"
+      otel.instrumentation/enabled: "true"
     resources:
   service:
     # Use LoadBalancer to expose the web interface externally
@@ -122,6 +145,7 @@ ragflow:
       type: ClusterIP
 
 infinity:
+  enabled: true
   image:
     repository: infiniflow/infinity
     tag: v0.7.0-dev5
@@ -132,11 +156,17 @@ infinity:
     capacity: 5Gi
   deployment:
     strategy:
+      type: RollingUpdate
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "23820"
+      prometheus.io/path: "/metrics"
     resources:
   service:
     type: ClusterIP
 
 elasticsearch:
+  enabled: false
   image:
     repository: elasticsearch
     tag: "8.11.3"
@@ -156,6 +186,11 @@ elasticsearch:
     capacity: 20Gi
   deployment:
     strategy:
+      type: RollingUpdate
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9200"
+      prometheus.io/path: "/_prometheus/metrics"
     resources:
       requests:
         cpu: "4"
@@ -164,6 +199,7 @@ elasticsearch:
     type: ClusterIP
 
 opensearch:
+  enabled: false
   image:
     repository: opensearchproject/opensearch
     tag: 2.19.1
@@ -183,6 +219,11 @@ opensearch:
     capacity: 20Gi
   deployment:
     strategy:
+      type: RollingUpdate
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9201"
+      prometheus.io/path: "/_plugins/_prometheus/metrics"
     resources:
       requests:
         cpu: "4"
@@ -191,7 +232,7 @@ opensearch:
     type: ClusterIP
 
 minio:
-  enabled: true
+  enabled: false
   image:
     repository: quay.io/minio/minio
     tag: RELEASE.2023-12-20T01-00-02Z
@@ -202,12 +243,17 @@ minio:
     capacity: 5Gi
   deployment:
     strategy:
+      type: RollingUpdate
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9000"
+      prometheus.io/path: "/minio/v2/metrics/cluster"
     resources:
   service:
     type: ClusterIP
 
 mysql:
-  enabled: true
+  enabled: false
   image:
     repository: mysql
     tag: 8.0.39
@@ -218,12 +264,16 @@ mysql:
     capacity: 5Gi
   deployment:
     strategy:
+      type: RollingUpdate
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "3306"
     resources:
   service:
     type: ClusterIP
 
 redis:
-  enabled: true
+  enabled: false
   image:
     repository: valkey/valkey
     tag: 8
@@ -241,6 +291,10 @@ redis:
       # whenScaled: Delete
   deployment:
     strategy:
+      type: RollingUpdate
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "6379"
     resources:
   service:
     type: ClusterIP
