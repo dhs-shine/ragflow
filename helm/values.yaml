@@ -102,6 +102,41 @@ ragflow:
     #       model_type: chat
     #       is_tools: false
 
+  # Deployment rendering mode: `monolith` keeps the original single Deployment,
+  # `split` renders dedicated Deployments for web/api/admin/worker workloads.
+  mode: monolith
+
+  workloads:
+    web:
+      enabled: true
+      replicaCount: 1
+      resources:
+      nodeSelector: {}
+      tolerations: []
+      affinity: {}
+    api:
+      enabled: true
+      replicaCount: 1
+      resources:
+      nodeSelector: {}
+      tolerations: []
+      affinity: {}
+    admin:
+      enabled: true
+      # Admin workload is fixed to replicas=1 in template rendering.
+      replicaCount: 1
+      resources:
+      nodeSelector: {}
+      tolerations: []
+      affinity: {}
+    worker:
+      enabled: true
+      replicaCount: 1
+      resources:
+      nodeSelector: {}
+      tolerations: []
+      affinity: {}
+
   # Kubernetes configuration
   deployment:
     strategy:
